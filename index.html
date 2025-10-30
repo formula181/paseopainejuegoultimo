@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rompecabezas Paseo Paine</title>
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --card: #111217;
+      --muted: #a8afb7;
+      --text: #e9eef3;
+      --brand: #00d4ff;
+      --border: #20232a;
+      --accent: #2a2f3a
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #090a0e, #0b0c10);
+      color: var(--text);
+      font: 15px/1.5 system-ui, -apple-system, Segoe UI, Inter, Roboto, Arial, sans-serif
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 16px
+    }
+
+    .brandbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #0f1016;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, .25)
+    }
+
+    .brandtitle {
+      font-weight: 800
+    }
+
+    .brandsub {
+      font-size: 12px;
+      color: var(--muted)
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px
+    }
+
+    @media (max-width:979px) {
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 16px
+      }
+
+      .grid>main {
+        order: -1
+      }
+
+      .grid>aside {
+        order: 2
+      }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 12px
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap
+    }
+
+    .btn,
+    .btn-brand {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #2b2f3a;
+      background: #1a1e27;
+      color: #e9eef3;
+      cursor: pointer
+    }
+
+    .btn-brand {
+      background: linear-gradient(135deg, var(--brand), #7cdd3b);
+      color: #000;
+      border-color: #0d1722;
+      font-weight: 700
+    }
+
+    .btn:disabled {
+      opacity: .6;
+      cursor: not-allowed
+    }
+
+    .stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    .chip {
+      background: #12151d;
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 8px 10px
+    }
+
+    canvas {
+      display: block;
+      background: #0c0e14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      image-rendering: crisp-edges;
+      max-width: 100%
+    }
+
+    .preview {
+      display: block;
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border)
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: #0e1016;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px
+    }
+
+    .gift {
+      width: 120px;
+      height: 90px;
+      background: #8b0000;
+      border-radius: 10px;
+      margin: 10px auto;
+      position: relative;
+      cursor: pointer;
+      transition: transform .2s
+    }
+
+    .gift.l9 {
+      background: #b8860b
+    }
+
+    .gift:hover {
+      transform: translateY(-2px)
+    }
+
+    .gift:before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 100%;
+      background: rgba(255, 255, 255, .15)
+    }
+
+    .lid {
+      position: absolute;
+      left: 0;
+      top: -20px;
+      width: 100%;
+      height: 30px;
+      background: #700000;
+      border-radius: 8px 8px 0 0;
+      transition: transform .4s
+    }
+
+    .gift.open .lid {
+      transform: translateY(-40px) rotate(-10deg)
+    }
+
+    .center {
+      text-align: center
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .65);
+      display: none;
+      place-items: center;
+      padding: 16px;
+      z-index: 40
+    }
+
+    .overlay.show {
+      display: grid
+    }
+
+    .win {
+      max-width: 540px;
+      width: 100%;
+      background: #0f1117;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px
+    }
+
+    .lb {
+      border-top: 1px dashed var(--border);
+      margin-top: 10px;
+      padding-top: 10px
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted)
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="brandbar">
+      <svg viewBox="0 0 64 64" width="40" height="40" aria-hidden="true">
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#00d4ff" />
+            <stop offset="1" stop-color="#22c55e" />
+          </linearGradient>
+        </defs>
+        <circle cx="32" cy="32" r="30" fill="url(#g1)"></circle>
+        <text x="32" y="38" text-anchor="middle" font-size="22" fill="#000" font-weight="800"
+          font-family="Inter,Arial">PP</text>
+      </svg>
+      <div>
+        <div class="brandtitle">Rompecabezas Paseo Paine</div>
+        <div class="brandsub">Familia & amigos • 2025</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <aside>
+        <div class="card">
+          <label>Controles</label>
+          <div class="row">
+            <button id="btnAudio" class="btn" style="background:#111827;border-color:#111827">🔊 Música</button>
+            <button id="btnShuffle" class="btn-brand">Barajar</button>
+            <button id="btnPrev" class="btn">⟨ Foto</button>
+            <button id="btnNext" class="btn">Foto ⟩</button>
+          </div>
+          <div style="height:10px"></div>
+          <div class="stats">
+            <div class="chip">⏱ <span id="time">0</span>s</div>
+            <div class="chip">🔁 Mov: <span id="moves">0</span></div>
+            <div class="chip">⭐ Pts: <span id="score">0</span></div>
+            <div class="chip">📷 <span id="photoIx">1</span>/<span id="photoTotal">10</span></div>
+            <div class="chip">👥 Participantes: <span id="participants">0</span></div>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="card">
+          <label>Vista previa</label>
+          <img id="preview" class="preview" src="" alt="Vista previa" />
+          <div class="small center" id="photoName" style="margin-top:6px"></div>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="card" style="border-radius:14px;border:1px dashed var(--border)">
+          <label>Historial local</label>
+          <div id="localHistory" class="small">Aún sin partidas.</div>
+        </div>
+      </aside>
+
+      <main>
+        <div class="card">
+          <label>Tablero</label>
+          <canvas id="board" width="720" height="720"></canvas>
+          <div class="small center" style="margin-top:6px">Toca/Click dos piezas para intercambiarlas</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Overlay Victoria -->
+  <div class="overlay" id="overlay">
+    <div class="win">
+      <h2>¡Nivel completado! 🥳</h2>
+      <div class="small">Se detuvo la música y sonó el efecto de ganador.</div>
+      <div style="height:12px"></div>
+      <div class="row">
+        <div class="chip">⏱ <span id="wTime">0</span>s</div>
+        <div class="chip">🔁 Mov: <span id="wMoves">0</span></div>
+        <div class="chip">⭐ Pts: <span id="wScore">0</span></div>
+        <div class="chip">Foto <span id="wLevel">1</span></div>
+      </div>
+      <div style="height:12px"></div>
+      <label>Tu nombre</label>
+      <input id="playerName" type="text" placeholder="Escribe tu nombre" />
+      <div style="height:12px"></div>
+      <div class="row">
+        <button id="btnSaveScore" class="btn-brand">Guardar puntaje</button>
+        <button id="btnNextPhoto" class="btn" disabled>Siguiente foto ⟶</button>
+        <button id="btnShareWA" class="btn">Compartir</button>
+        <button id="btnClose" class="btn">Cerrar</button>
+      </div>
+
+      <div id="prizeBox" class="center" style="display:none">
+        <div style="height:16px"></div>
+        <div class="small">🎁 ¡Toca el regalo!</div>
+        <div class="gift" id="gift">
+          <div class="lid"></div>
+        </div>
+        <div class="small" id="prizeText"></div>
+      </div>
+
+      <div class="lb small" id="localSavedNote" style="display:none">✅ Puntaje guardado en este dispositivo.</div>
+    </div>
+  </div>
+
+  <!-- AUDIO -->
+  <audio id="bgAudio" src="./audio/suspense.mp3" preload="auto" loop playsinline></audio>
+  <audio id="winAudio" src="./audio/victory.mp3" preload="auto" playsinline></audio>
+
+  <script>
+    /* ===== Config ===== */
+    const PHOTO_BASENAMES = [
+      "foto_01", "foto_02", "foto_03", "foto_04", "foto_05",
+      "foto_06", "foto_07", "foto_08", "foto_09", "foto_10"
+    ];
+    const CANDIDATE_EXTS = ["jpeg", "jpg", "png"];     // fallback ext
+    const PROGRESSION = [4, 4, 5, 5, 6, 6, 7, 7, 8, 8];      // grid por foto
+    const WHATSAPP_NUM = "56946971900";
+    const MSG_L5 = "TE HAS GANADO UNA CAJA DE CERVEZA PARA EL PROXIMO PASEO";
+    const MSG_L10 = "TE HAS GANADO UNA BOTELLA DE WHISKY";
+
+    /* ===== Helpers ===== */
+    function gridForPhoto(ix) { const n = PROGRESSION[Math.min(ix, PROGRESSION.length - 1)] || 4; return Math.max(2, Math.min(8, n)) }
+    function currentLevel() { return currentPhoto + 1 }
+    function computeScore(sec, mov) { return Math.max(1, Math.round(10000 / (sec + mov + 1))) }
+    function escapeHtml(s) { return String(s).replace(/[&<>\"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])) }
+
+    /* ===== DOM ===== */
+    const cvs = document.getElementById('board'), ctx = cvs.getContext('2d');
+    const preview = document.getElementById('preview'), photoNameEl = document.getElementById('photoName');
+    const photoIxEl = document.getElementById('photoIx'), photoTotalEl = document.getElementById('photoTotal');
+    const timeEl = document.getElementById('time'), movesEl = document.getElementById('moves'), scoreEl = document.getElementById('score');
+    const btnShuffle = document.getElementById('btnShuffle'), btnPrev = document.getElementById('btnPrev'), btnNext = document.getElementById('btnNext');
+    const participantsEl = document.getElementById('participants');
+
+    let currentPhoto = 0, img = new Image(), N = 4, tiles = [], sel = [];
+    let timer = 0, moves = 0, solved = false, tInt = null, startEpoch = 0;
+
+    /* ===== Audio ===== */
+    const bgAudio = document.getElementById('bgAudio');
+    const winAudio = document.getElementById('winAudio');
+    const btnAudio = document.getElementById('btnAudio');
+    let musicWanted = (localStorage.getItem('pp:music') ?? '1') === '1';
+    if (bgAudio) { bgAudio.volume = 0.7; bgAudio.muted = false; }
+    async function startSuspense() { if (musicWanted) { try { await bgAudio.play(); } catch (e) { } } }
+    function stopSuspense() { try { bgAudio.pause(); } catch (e) { } }
+    function playWinnerSFX() { try { winAudio.currentTime = 0; winAudio.muted = false; winAudio.play(); } catch (e) { } }
+    function updateBtnAudio() { btnAudio.textContent = musicWanted ? '🔊 Música' : '🔇 Silencio' }
+    updateBtnAudio();
+    const resume = () => { startSuspense(); document.removeEventListener('pointerdown', resume); document.removeEventListener('touchstart', resume); document.removeEventListener('keydown', resume); }
+    document.addEventListener('pointerdown', resume); document.addEventListener('touchstart', resume, { passive: true }); document.addEventListener('keydown', resume);
+    btnAudio.addEventListener('click', async () => { musicWanted = !musicWanted; localStorage.setItem('pp:music', musicWanted ? '1' : '0'); updateBtnAudio(); if (musicWanted) await startSuspense(); else stopSuspense(); });
+
+    /* ===== Local History ===== */
+    const LS_NAME_KEY = 'pp:lastName', LS_SCORES_KEY = 'pp:localScores';
+    function uniqueParticipants(arr) { return new Set(arr.map(r => (r.name || '').trim().toLowerCase())).size }
+    function renderLocalHistory() {
+      const box = document.getElementById('localHistory');
+      try {
+        const arr = JSON.parse(localStorage.getItem(LS_SCORES_KEY) || '[]');
+        const count = uniqueParticipants(arr); participantsEl.textContent = count;
+        if (!arr.length) { box.textContent = 'Aún sin partidas.'; return; }
+        box.innerHTML = arr.slice(0, 20).map((r, i) => (`#${i + 1} — ${escapeHtml(r.name)} · ${r.score} pts · Foto ${r.level} · ${r.seconds}s · ${r.moves} mov`)).join('<br/>');
+      } catch (e) { box.textContent = '—'; participantsEl.textContent = '0'; }
+    }
+    function addLocalScore(entry) {
+      try {
+        const arr = JSON.parse(localStorage.getItem(LS_SCORES_KEY) || '[]');
+        arr.push(entry);
+        arr.sort((a, b) => b.score - a.score || a.seconds - b.seconds || a.moves - b.moves);
+        localStorage.setItem(LS_SCORES_KEY, JSON.stringify(arr.slice(0, 50)));
+        renderLocalHistory();
+      } catch (e) { }
+    }
+
+    /* ===== Overlay ===== */
+    const overlay = document.getElementById('overlay');
+    const wTime = document.getElementById('wTime'), wMoves = document.getElementById('wMoves'), wScore = document.getElementById('wScore'), wLevel = document.getElementById('wLevel');
+    const playerName = document.getElementById('playerName'), btnSaveScore = document.getElementById('btnSaveScore');
+    const btnNextPhoto = document.getElementById('btnNextPhoto'), btnShareWA = document.getElementById('btnShareWA'), btnClose = document.getElementById('btnClose');
+    const localSavedNote = document.getElementById('localSavedNote'), prizeBox = document.getElementById('prizeBox'), gift = document.getElementById('gift'), prizeText = document.getElementById('prizeText');
+    const REQUIRED_PARTICIPANTS = 15;
+    function isUniqueBestTime(arr, photoIx, sec) {
+      const times = arr.filter(r => r.photoIx === photoIx).map(r => r.seconds);
+      if (!times.length) return false; const best = Math.min(...times); const bestCount = times.filter(t => t === best).length;
+      return sec === best && bestCount === 1;
+    }
+    function showWin() {
+      overlay.classList.add('show'); stopSuspense(); playWinnerSFX();
+      const lv = currentLevel(); wTime.textContent = timer; wMoves.textContent = moves; wScore.textContent = computeScore(timer, moves); wLevel.textContent = lv;
+      if (!playerName.value) playerName.value = localStorage.getItem(LS_NAME_KEY) || 'Jugador';
+      prizeBox.style.display = 'none'; gift.classList.remove('open', 'l9'); btnNextPhoto.disabled = true;
+      btnShareWA.onclick = () => {
+        const msg = `Mi puntaje en Rompecabezas Paseo Paine: ${computeScore(timer, moves)} pts · Foto ${lv} · Tiempo ${timer}s · Mov ${moves} — ¿te atreves a superarlo?`;
+        window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+      };
+      btnClose.onclick = () => overlay.classList.remove('show');
+    }
+    btnNextPhoto.addEventListener('click', () => { overlay.classList.remove('show'); setPhoto(currentPhoto + 1); });
+
+    /* ===== Juego ===== */
+    function setPhoto(ix) {
+      currentPhoto = (ix + PHOTO_BASENAMES.length) % PHOTO_BASENAMES.length;
+      const base = "./images/" + PHOTO_BASENAMES[currentPhoto];
+      let tryIx = 0;
+
+      function tryLoad() {
+        const url = base + "." + CANDIDATE_EXTS[tryIx];
+        img = new Image();
+        img.onload = () => {
+          const pretty = decodeURIComponent(url.split("/").pop());
+          preview.src = url;
+          photoNameEl.textContent = pretty;
+          photoIxEl.textContent = (currentPhoto + 1);
+          photoTotalEl.textContent = PHOTO_BASENAMES.length;
+          N = gridForPhoto(currentPhoto);
+          drawInitial();
+        };
+        img.onerror = () => {
+          tryIx++;
+          if (tryIx < CANDIDATE_EXTS.length) tryLoad();
+          else { preview.src = ""; photoNameEl.textContent = "Error cargando " + base; }
+        };
+        img.src = url;
+      }
+      tryLoad();
+    }
+
+    function drawInitial() {
+      clearInterval(tInt); tInt = null; timer = 0; moves = 0; solved = false; sel = [];
+      timeEl.textContent = '0'; movesEl.textContent = '0'; scoreEl.textContent = '0';
+      const total = N * N; tiles = Array.from({ length: total }, (_, i) => i);
+      for (let i = tiles.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[tiles[i], tiles[j]] = [tiles[j], tiles[i]]; }
+      render(); startSuspense();
+    }
+    function render() {
+      const W = cvs.width, H = cvs.height, tw = Math.floor(W / N), th = Math.floor(H / N);
+      ctx.fillStyle = '#0b0e14'; ctx.fillRect(0, 0, W, H); if (!img.complete) return;
+      const sw = Math.floor(img.width / N), sh = Math.floor(img.height / N);
+      for (let y = 0; y < N; y++) {
+        for (let x = 0; x < N; x++) {
+          const idx = y * N + x, src = tiles[idx], sx = (src % N) * sw, sy = Math.floor(src / N) * sh;
+          ctx.drawImage(img, sx, sy, sw, sh, x * tw, y * th, tw, th);
+          if (sel.includes(idx)) { ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 4; ctx.strokeRect(x * tw + 2, y * th + 2, tw - 4, th - 4); }
+        }
+      }
+    }
+    function isSolved() { for (let i = 0; i < tiles.length; i++) if (tiles[i] !== i) return false; return true }
+    cvs.addEventListener('click', ev => {
+      if (solved) return;
+      const r = cvs.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top, tw = cvs.width / N, th = cvs.height / N;
+      const idx = Math.floor(y / th) * N + Math.floor(x / tw);
+      if (!tInt) { startEpoch = Date.now(); tInt = setInterval(() => { timer = Math.floor((Date.now() - startEpoch) / 1000); timeEl.textContent = String(timer); scoreEl.textContent = String(computeScore(timer, moves)); }, 250); startSuspense(); }
+      if (!sel.includes(idx)) sel.push(idx);
+      if (sel.length === 2) {
+        const [a, b] = sel;[tiles[a], tiles[b]] = [tiles[b], tiles[a]]; sel = []; moves++; movesEl.textContent = String(moves); scoreEl.textContent = String(computeScore(timer, moves)); render();
+        if (isSolved()) { clearInterval(tInt); tInt = null; solved = true; showWin(); }
+      } else render();
+    });
+
+    /* ===== Botones ===== */
+    btnShuffle.onclick = () => { startSuspense(); drawInitial(); };
+    btnPrev.onclick = () => setPhoto(currentPhoto - 1);
+    btnNext.onclick = () => setPhoto(currentPhoto + 1);
+
+    /* ===== Guardar puntaje + premios ===== */
+    btnSaveScore.onclick = () => {
+      const name = (playerName.value || 'Jugador').slice(0, 30);
+      localStorage.setItem('pp:lastName', name);
+      const lv = currentLevel();
+      const entry = { name, score: computeScore(timer, moves), seconds: timer, moves, level: lv, photoIx: currentPhoto, date: Date.now() };
+      try {
+        const arr = JSON.parse(localStorage.getItem('pp:localScores') || '[]');
+        arr.push(entry);
+        arr.sort((a, b) => b.score - a.score || a.seconds - b.seconds || a.moves - b.moves);
+        localStorage.setItem('pp:localScores', JSON.stringify(arr.slice(0, 50)));
+      } catch (e) { }
+      localSavedNote.style.display = 'block'; btnNextPhoto.disabled = false;
+
+      const arr = JSON.parse(localStorage.getItem('pp:localScores') || '[]');
+      const participants = (new Set(arr.map(r => (r.name || '').trim().toLowerCase()))).size;
+      const REQUIRED_PARTICIPANTS = 15;
+      const isPrizePhoto = (lv === 5 || lv === 10);
+      const times = arr.filter(r => r.photoIx === currentPhoto).map(r => r.seconds);
+      const uniqueBest = (times.length > 0 && Math.min(...times) === entry.seconds && times.filter(t => t === entry.seconds).length === 1);
+
+      if (isPrizePhoto && participants >= REQUIRED_PARTICIPANTS && uniqueBest) {
+        prizeBox.style.display = 'block'; prizeText.textContent = (lv === 5) ? 'Foto 5: ¡Caja de cerveza!' : 'Foto 10: ¡Botella de whisky!';
+        gift.classList.toggle('l9', lv === 10);
+        const msg = encodeURIComponent(lv === 5 ? MSG_L5 : MSG_L10); const wa = 'https://wa.me/' + WHATSAPP_NUM + '?text=' + msg;
+        gift.onclick = () => { gift.classList.add('open'); setTimeout(() => window.open(wa, '_blank'), 600); };
+      } else {
+        prizeBox.style.display = 'none';
+      }
+      renderLocalHistory();
+    };
+
+    /* ===== Init ===== */
+    function init() { renderLocalHistory(); setPhoto(0); }
+    init();
+  </script>
+</body>
+
+</html>
